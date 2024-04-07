@@ -20,6 +20,8 @@ import urequests
 hub = "hub1"
 room_current = "ready"
 
+button_delay = 150
+
 
 # Create your objects here.
 ev3 = EV3Brick()
@@ -65,6 +67,12 @@ def stop_all():
 
 def fill_finish():
 
+    global button_delay
+
+    wait(button_delay)
+    if(button_fill_finish.pressed() != True):
+        return False
+
     print("fill_finish")
 
     response = urequests.get("http://192.168.1.10:8888/queue.php?next=virtual.mp4")
@@ -73,8 +81,8 @@ def fill_finish():
 
     motorA.dc(100)
 
-    while counter < 400:
-        wait(25)
+    while counter < 20:
+        wait(100)
         counter += 1
         if check_buttons():
             counter = 10000
@@ -87,6 +95,12 @@ def fill_finish():
 
 def process_development():
 
+    global button_delay
+
+    wait(button_delay)
+    if(button_process_development.pressed() != True):
+        return False
+
     print("process_development")
 
     response = urequests.get("http://192.168.1.10:8888/queue.php?next=drops.mp4")
@@ -95,8 +109,8 @@ def process_development():
 
     motorB.dc(100)
 
-    while counter < 400:
-        wait(25)
+    while counter < 20:
+        wait(100)
         counter += 1
         if check_buttons():
             counter = 10000
@@ -108,7 +122,7 @@ def process_development():
 
 def check_buttons():
 
-    global room_current
+    global room_current, button_delay
 
     if Button.CENTER in ev3.buttons.pressed():
         stop_all()

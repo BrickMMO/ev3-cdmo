@@ -20,6 +20,8 @@ import urequests
 hub = "hub2"
 room_current = "ready"
 
+button_delay = 150
+
 
 # Create your objects here.
 ev3 = EV3Brick()
@@ -62,6 +64,12 @@ def stop_all():
 
 def upstream():
 
+    global button_delay
+
+    wait(button_delay)
+    if(button_upstream.pressed() != True):
+        return False
+
     print("upstream")
 
     response = urequests.get("http://192.168.1.10:8888/queue.php?next=microscope.mp4")
@@ -70,8 +78,8 @@ def upstream():
 
     motorA.dc(100)
 
-    while counter < 400:
-        wait(25)
+    while counter < 20:
+        wait(100)
         counter += 1
         if check_buttons():
             counter = 10000
@@ -106,11 +114,9 @@ while True:
 
     elif(button_upstream.pressed() == True):
         stop_all()
-        # press("upstream")
+        press("upstream")
 
     wait(100)
-
-    print(button_upstream.pressed())
 
 # Write your program here.
 ev3.speaker.beep()
