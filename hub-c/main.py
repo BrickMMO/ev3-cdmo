@@ -16,7 +16,7 @@ import threading
 
 client = BluetoothMailboxClient()
 mailbox_status = TextMailbox("", client)
-client.connect("delta")
+client.connect("bravo")
 
 wait(1000)
 

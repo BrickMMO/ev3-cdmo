@@ -6,16 +6,19 @@ from pybricks.parameters import Port, Stop, Direction, Button, Color
 from pybricks.tools import wait, StopWatch, DataLog
 from pybricks.robotics import DriveBase
 from pybricks.media.ev3dev import SoundFile, ImageFile
+from pybricks.messaging import BluetoothMailboxServer, TextMailbox
 
 import urequests
+import threading
 
 # This program requires LEGO EV3 MicroPython v2.0 or higher.
 # Click "Open user guide" on the EV3 extension tab for more information.
 
-# server = BluetoothMailboxServer()
-# server.wait_for_connection(1)
+server = BluetoothMailboxServer()
+mailbox_status = TextMailbox("", server)
+server.wait_for_connection()
 
-# mailbox_room = TextMailbox("", server)
+wait(1000)
 
 hub = "hub1"
 room_current = "ready"
@@ -74,6 +77,8 @@ def fill_finish():
         return False
 
     print("fill_finish")
+    room_current = "fill_finish"
+    mailbox_status.send("fill_finish")
 
     response = urequests.get("http://192.168.1.10:8888/queue.php?next=virtual.mp4")
 
@@ -81,7 +86,7 @@ def fill_finish():
 
     motorA.dc(100)
 
-    while counter < 20:
+    while counter < 100:
         wait(100)
         counter += 1
         if check_buttons():
@@ -102,6 +107,8 @@ def process_development():
         return False
 
     print("process_development")
+    room_current = "process_development"
+    mailbox_status.send("process_development")
 
     response = urequests.get("http://192.168.1.10:8888/queue.php?next=drops.mp4")
 
@@ -109,7 +116,7 @@ def process_development():
 
     motorB.dc(100)
 
-    while counter < 20:
+    while counter < 100:
         wait(100)
         counter += 1
         if check_buttons():
@@ -140,6 +147,18 @@ def check_buttons():
 
     return False
 
+def mailbox():
+
+    global room_current
+
+    while True:
+        mailbox_status.wait()
+        print(mailbox_status.read() + " - " + room_current)
+        if(mailbox_status.read() != room_current):
+            mailbox_status.send(room_current)
+            stop_all()
+
+threading.Thread(target=mailbox).start()
 
 # Create a loop to react to distance
 while True:
@@ -155,7 +174,7 @@ while True:
         stop_all()
         press("process_development")
 
-    wait(100)
+    wait(250)
 
 # Write your program here.
 ev3.speaker.beep()
