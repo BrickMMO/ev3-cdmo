@@ -14,13 +14,15 @@ import threading
 # This program requires LEGO EV3 MicroPython v2.0 or higher.
 # Click "Open user guide" on the EV3 extension tab for more information.
 
+'''
 client = BluetoothMailboxClient()
 mailbox_status = TextMailbox("", client)
 client.connect("delta")
+'''
 
 wait(1000)
 
-hub = "hub2"
+hub = "hub-b"
 room_current = "ready"
 
 button_delay = 150
@@ -28,11 +30,32 @@ button_delay = 150
 
 # Create your objects here.
 ev3 = EV3Brick()
+ev3.speaker.beep()
 
 # Initialize EV3 touch sensor and motors
 motorA = Motor(Port.A)
+motorB = Motor(Port.B)
+motorC = Motor(Port.C)
+motorD = Motor(Port.D)
 
-button_upstream = TouchSensor(Port.S1)
+'''
+# motorA.dc(30)
+# motorB.dc(50)
+# motorC.dc(50)
+motorD.dc(50)
+
+wait(6000)
+
+motorA.dc(0)
+motorB.dc(0)
+motorC.dc(0)
+motorD.dc(0)
+
+exit
+'''
+
+button_joinn = TouchSensor(Port.S1)
+button_scorpius = TouchSensor(Port.S1)
 
 def press(room_new):
 
@@ -41,20 +64,20 @@ def press(room_new):
     room_current = room_new
     print("starting " + room_current)
 
-    if(room_current == "fill_finish"):
-        fill_finish()
+    if(room_current == "argonaut"):
+        argonaut()
 
-    elif(room_current == "process_development"):
-        process_development()
+    elif(room_current == "wheeler"):
+        wheeler()
 
-    elif(room_current == "upstream"):
-        upstream()
+    elif(room_current == "joinn"):
+        joinn()
 
-    elif(room_current ==  "downstream"):
-        downstream()
+    elif(room_current ==  "scorpius"):
+        scorpius()
 
-    elif(room_current == "quality"):
-        quality()
+    elif(room_current == "biodextris"):
+        biodextris()
 
 def stop_all():
 
@@ -68,19 +91,19 @@ def stop_all():
 
     print("end of stop_all")    
 
-def upstream():
+def joinn():
 
     global button_delay, room_current
 
     wait(button_delay)
-    if(button_upstream.pressed() != True):
+    if(button_joinn.pressed() != True):
         return False
 
-    print("upstream")
-    room_current = "upstream"
-    mailbox_status.send("upstream")
+    print("joinn")
+    room_current = "joinn"
+    # mailbox_status.send("joinn")
 
-    response = urequests.get("http://192.168.1.10:8888/queue.php?next=microscope.mp4")
+    response = urequests.get("http://192.168.1.15:8888/queue.php?next=joinn.mp4")
 
     counter = 0
 
@@ -92,7 +115,35 @@ def upstream():
         if check_buttons():
             counter = 10000
 
-    print("end of upstream")
+    print("end of joinn")
+
+    stop_all()
+
+def scorpius():
+
+    global button_delay, room_current
+
+    wait(button_delay)
+    if(button_scorpius.pressed() != True):
+        return False
+
+    print("scorpius")
+    room_current = "scorpius"
+    # mailbox_status.send("scorpius")
+
+    response = urequests.get("http://192.168.1.15:8888/queue.php?next=scorpius.mp4")
+
+    counter = 0
+
+    motorA.dc(100)
+
+    while counter < 100:
+        wait(100)
+        counter += 1
+        if check_buttons():
+            counter = 10000
+
+    print("end of scorpius")
 
     stop_all()
 
@@ -121,7 +172,7 @@ def mailbox():
         if(mailbox_status.read() != room_current):
             stop_all()
 
-threading.Thread(target=mailbox).start()
+# threading.Thread(target=mailbox).start()
 
 # Create a loop to react to distance
 while True:
@@ -130,9 +181,13 @@ while True:
         stop_all()
         break
 
-    elif(button_upstream.pressed() == True):
+    elif(button_joinn.pressed() == True):
         stop_all()
-        press("upstream")
+        press("joinn")
+
+    elif(button_scorpius.pressed() == True):
+        stop_all()
+        press("scorpius")
 
     wait(250)
 

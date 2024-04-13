@@ -2,6 +2,7 @@
 from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import (Motor, TouchSensor, ColorSensor,
                                  InfraredSensor, UltrasonicSensor, GyroSensor)
+from pybricks.iodevices import DCMotor
 from pybricks.parameters import Port, Stop, Direction, Button, Color
 from pybricks.tools import wait, StopWatch, DataLog
 from pybricks.robotics import DriveBase
@@ -14,27 +15,44 @@ import threading
 # This program requires LEGO EV3 MicroPython v2.0 or higher.
 # Click "Open user guide" on the EV3 extension tab for more information.
 
+'''
 server = BluetoothMailboxServer()
 mailbox_status = TextMailbox("", server)
 server.wait_for_connection()
+'''
 
 wait(1000)
 
-hub = "hub1"
+hub = "hub-a"
 room_current = "ready"
 
 button_delay = 150
 
-
 # Create your objects here.
 ev3 = EV3Brick()
+ev3.speaker.beep()
 
 # Initialize EV3 touch sensor and motors
 motorA = Motor(Port.A)
 motorB = Motor(Port.B)
+# motorC = Motor(Port.C)
+motorD = DCMotor(Port.D)
 
-button_fill_finish = TouchSensor(Port.S1)
-button_process_development = TouchSensor(Port.S2)
+motorD.dc(100)
+
+'''
+# Testing interactive components
+motorA.dc(-60)
+motorB.dc(60)
+
+wait(5000)
+
+motorA.dc(0)
+motorB.dc(0)
+'''
+
+button_argonaut = TouchSensor(Port.S1)
+button_wheeler = TouchSensor(Port.S2)
 
 def press(room_new):
 
@@ -43,20 +61,11 @@ def press(room_new):
     room_current = room_new
     print("starting " + room_current)
 
-    if(room_current == "fill_finish"):
-        fill_finish()
+    if(room_current == "argonaut"):
+        argonaut()
 
-    elif(room_current == "process_development"):
-        process_development()
-
-    elif(room_current == "upstream"):
-        upstream()
-
-    elif(room_current ==  "downstream"):
-        downstream()
-
-    elif(room_current == "quality"):
-        quality()
+    elif(room_current == "wheeler"):
+        wheeler()
 
 def stop_all():
 
@@ -65,26 +74,27 @@ def stop_all():
 
     motorA.dc(0)
     motorB.dc(0)
+    # motorC.dc(0)
 
     print("end of stop_all")
 
-def fill_finish():
+def argonaut():
 
     global button_delay
 
     wait(button_delay)
-    if(button_fill_finish.pressed() != True):
+    if(button_argonaut.pressed() != True):
         return False
 
-    print("fill_finish")
-    room_current = "fill_finish"
-    mailbox_status.send("fill_finish")
+    print("argonaut")
+    room_current = "argonaut"
+    # mailbox_status.send("argonaut")
 
-    response = urequests.get("http://192.168.1.10:8888/queue.php?next=virtual.mp4")
+    response = urequests.get("http://192.168.1.15:8888/queue.php?next=argonaut.mp4")
 
     counter = 0
 
-    motorA.dc(100)
+    motorA.dc(-60)
 
     while counter < 100:
         wait(100)
@@ -93,28 +103,29 @@ def fill_finish():
             counter = 10000
         
 
-    print("end of fill_finish")
+    print("end of argonaut")
 
     stop_all()
     
 
-def process_development():
+def wheeler():
 
     global button_delay
 
     wait(button_delay)
-    if(button_process_development.pressed() != True):
+    if(button_wheeler.pressed() != True):
         return False
 
-    print("process_development")
-    room_current = "process_development"
-    mailbox_status.send("process_development")
+    print("wheeler")
+    room_current = "wheeler"
+    # mailbox_status.send("wheeler")
 
-    response = urequests.get("http://192.168.1.10:8888/queue.php?next=drops.mp4")
+    response = urequests.get("http://192.168.1.15:8888/queue.php?next=wheeler.mp4")
 
     counter = 0
 
-    motorB.dc(100)
+    motorB.dc(50)
+    # motorC.dc(50)
 
     while counter < 100:
         wait(100)
@@ -122,8 +133,7 @@ def process_development():
         if check_buttons():
             counter = 10000
         
-
-    print("end of process_development")
+    print("end of wheeler")
 
     stop_all()
 
@@ -135,12 +145,12 @@ def check_buttons():
         stop_all()
         return True
 
-    elif(button_fill_finish.pressed() == True and room_current != "fill_finish"):
+    elif(button_argonaut.pressed() == True and room_current != "argonaut"):
         stop_all()
         print("button pressed")
         return True
 
-    elif(button_process_development.pressed() == True and room_current != "process_development"):
+    elif(button_wheeler.pressed() == True and room_current != "wheeler"):
         stop_all()
         print("button pressed")
         return True
@@ -158,7 +168,7 @@ def mailbox():
             mailbox_status.send(room_current)
             stop_all()
 
-threading.Thread(target=mailbox).start()
+# threading.Thread(target=mailbox).start()
 
 # Create a loop to react to distance
 while True:
@@ -166,13 +176,13 @@ while True:
     if Button.CENTER in ev3.buttons.pressed():
         break
 
-    elif(button_fill_finish.pressed() == True):
+    elif(button_argonaut.pressed() == True):
         stop_all()
-        press("fill_finish")
+        press("argonaut")
 
-    elif(button_process_development.pressed() == True):
+    elif(button_wheeler.pressed() == True):
         stop_all()
-        press("process_development")
+        press("wheeler")
 
     wait(250)
 
