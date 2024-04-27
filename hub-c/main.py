@@ -23,6 +23,7 @@ wait(1000)
 hub = "hub2"
 room_current = "ready"
 
+animation = 20
 button_delay = 150
 
 
@@ -86,11 +87,11 @@ def upstream():
 
     motorA.dc(100)
 
-    while counter < 100:
+    while counter < 10 * animation:
         wait(100)
         counter += 1
         if check_buttons():
-            counter = 10000
+            counter = 1000 * animation
 
     print("end of upstream")
 
