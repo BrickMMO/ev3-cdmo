@@ -14,11 +14,10 @@ import threading
 # This program requires LEGO EV3 MicroPython v2.0 or higher.
 # Click "Open user guide" on the EV3 extension tab for more information.
 
-'''
+
 client = BluetoothMailboxClient()
 mailbox_status = TextMailbox("", client)
 client.connect("delta")
-'''
 
 wait(1000)
 
@@ -39,45 +38,39 @@ motorC = Motor(Port.C)
 motorD = Motor(Port.D)
 
 '''
-# motorA.dc(30)
-# motorB.dc(50)
-# motorC.dc(50)
+# Testing interactive components
+motorB.dc(35)
+motorC.dc(30)
+
+wait(6000)
+
+motorA.dc(30)
 motorD.dc(50)
+motorB.dc(0)
+motorC.dc(0)
 
 wait(6000)
 
 motorA.dc(0)
-motorB.dc(0)
-motorC.dc(0)
 motorD.dc(0)
 
 exit
 '''
 
 button_joinn = TouchSensor(Port.S1)
-button_scorpius = TouchSensor(Port.S1)
+button_scorpius = TouchSensor(Port.S2)
 
 def press(room_new):
 
     global room_current
 
-    room_current = room_new
-    print("starting " + room_current)
+    print("starting " + room_new)
 
-    if(room_current == "argonaut"):
-        argonaut()
-
-    elif(room_current == "wheeler"):
-        wheeler()
-
-    elif(room_current == "joinn"):
+    if(room_new == "joinn"):
         joinn()
 
-    elif(room_current ==  "scorpius"):
+    elif(room_new ==  "scorpius"):
         scorpius()
-
-    elif(room_current == "biodextris"):
-        biodextris()
 
 def stop_all():
 
@@ -85,9 +78,11 @@ def stop_all():
     room_current = "ready"
 
     motorA.dc(0)
-
-    # mailbox_status.send("reset")  
-    # print("mailbox_status " + mailbox_status.read())
+    motorB.dc(0)
+    motorC.dc(0)
+    motorD.dc(0)
+    
+    # mailbox_status.send("ready")
 
     print("end of stop_all")    
 
@@ -98,16 +93,21 @@ def joinn():
     wait(button_delay)
     if(button_joinn.pressed() != True):
         return False
+    elif(room_current == "joinn"):
+        return False
+
+    stop_all()
 
     print("joinn")
     room_current = "joinn"
-    # mailbox_status.send("joinn")
+    mailbox_status.send("joinn")
 
-    response = urequests.get("http://192.168.1.15:8888/queue.php?next=joinn.mp4")
+    response = urequests.get("http://10.12.1.105:8888/queue.php?next=joinn.mp4")
 
     counter = 0
 
-    motorA.dc(100)
+    motorA.dc(30)
+    motorD.dc(50)
 
     while counter < 100:
         wait(100)
@@ -126,16 +126,21 @@ def scorpius():
     wait(button_delay)
     if(button_scorpius.pressed() != True):
         return False
+    elif(room_current == "scorpius"):
+        return False
+
+    stop_all()
 
     print("scorpius")
     room_current = "scorpius"
-    # mailbox_status.send("scorpius")
+    mailbox_status.send("scorpius")
 
-    response = urequests.get("http://192.168.1.15:8888/queue.php?next=scorpius.mp4")
+    response = urequests.get("http://10.12.1.105:8888/queue.php?next=scorpius.mp4")
 
     counter = 0
 
-    motorA.dc(100)
+    motorB.dc(35)
+    motorC.dc(80)
 
     while counter < 100:
         wait(100)
@@ -151,12 +156,19 @@ def check_buttons():
 
     global room_current
 
+    print("------------------------------")
+    print("Checking buttons")
+    print(room_current)
+
     if Button.CENTER in ev3.buttons.pressed():
         stop_all()
         return True
 
-    elif(button_upstream.pressed() == True and room_current != "upstream"):
-        stop_all()
+    elif(button_joinn.pressed() == True and room_current != "joinn"):
+        print("button pressed")
+        return True
+
+    elif(button_scorpius.pressed() == True and room_current != "scorpius"):
         print("button pressed")
         return True
 
@@ -167,12 +179,20 @@ def mailbox():
     global room_current
 
     while True:
+
         mailbox_status.wait()
-        print(mailbox_status.read() + " - " + room_current)
+
+        print("------------------------------")
+        print(mailbox_status.read())
+        print(room_current)
+
         if(mailbox_status.read() != room_current):
+
             stop_all()
 
-# threading.Thread(target=mailbox).start()
+            room_current = mailbox_status.read()
+
+threading.Thread(target=mailbox).start()
 
 # Create a loop to react to distance
 while True:

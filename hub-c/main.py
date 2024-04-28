@@ -16,11 +16,11 @@ import threading
 
 client = BluetoothMailboxClient()
 mailbox_status = TextMailbox("", client)
-client.connect("bravo")
+client.connect("delta")
 
 wait(1000)
 
-hub = "hub2"
+hub = "hub-c"
 room_current = "ready"
 
 button_delay = 150
@@ -28,33 +28,38 @@ button_delay = 150
 
 # Create your objects here.
 ev3 = EV3Brick()
+ev3.speaker.beep()
 
 # Initialize EV3 touch sensor and motors
+# Screen
 motorA = Motor(Port.A)
+# Shaker
+motorB = Motor(Port.B)
 
-button_upstream = TouchSensor(Port.S1)
+'''
+# Testing interactive components
+motorA.dc(40)
+motorB.dc(35)
+
+
+wait(6000)
+
+motorA.dc(0)
+motorB.dc(0)
+
+exit
+'''
+
+button_biodextris = TouchSensor(Port.S1)
 
 def press(room_new):
 
     global room_current
 
-    room_current = room_new
-    print("starting " + room_current)
+    print("starting " + room_new)
 
-    if(room_current == "fill_finish"):
-        fill_finish()
-
-    elif(room_current == "process_development"):
-        process_development()
-
-    elif(room_current == "upstream"):
-        upstream()
-
-    elif(room_current ==  "downstream"):
-        downstream()
-
-    elif(room_current == "quality"):
-        quality()
+    if(room_new == "biodextris"):
+        biodextris()
 
 def stop_all():
 
@@ -62,29 +67,34 @@ def stop_all():
     room_current = "ready"
 
     motorA.dc(0)
-
-    # mailbox_status.send("reset")  
-    # print("mailbox_status " + mailbox_status.read())
+    motorB.dc(0)
+    
+    # mailbox_status.send("ready")
 
     print("end of stop_all")    
 
-def upstream():
+def biodextris():
 
     global button_delay, room_current
 
     wait(button_delay)
-    if(button_upstream.pressed() != True):
+    if(button_biodextris.pressed() != True):
+        return False
+    elif(room_current == "biodextris"):
         return False
 
-    print("upstream")
-    room_current = "upstream"
-    mailbox_status.send("upstream")
+    stop_all()
 
-    response = urequests.get("http://192.168.1.10:8888/queue.php?next=microscope.mp4")
+    print("biodextris")
+    room_current = "biodextris"
+    mailbox_status.send("biodextris")
+
+    response = urequests.get("http://10.12.1.105:8888/queue.php?next=biodextris.mp4")
 
     counter = 0
 
-    motorA.dc(100)
+    motorA.dc(40)
+    motorB.dc(30)
 
     while counter < 100:
         wait(100)
@@ -92,7 +102,7 @@ def upstream():
         if check_buttons():
             counter = 10000
 
-    print("end of upstream")
+    print("end of biodextris")
 
     stop_all()
 
@@ -100,12 +110,15 @@ def check_buttons():
 
     global room_current
 
+    print("------------------------------")
+    print("Checking buttons")
+    print(room_current)
+
     if Button.CENTER in ev3.buttons.pressed():
         stop_all()
         return True
 
-    elif(button_upstream.pressed() == True and room_current != "upstream"):
-        stop_all()
+    elif(button_biodextris.pressed() == True and room_current != "biodextris"):
         print("button pressed")
         return True
 
@@ -116,10 +129,18 @@ def mailbox():
     global room_current
 
     while True:
+
         mailbox_status.wait()
-        print(mailbox_status.read() + " - " + room_current)
+
+        print("------------------------------")
+        print(mailbox_status.read())
+        print(room_current)
+
         if(mailbox_status.read() != room_current):
+
             stop_all()
+
+            room_current = mailbox_status.read()
 
 threading.Thread(target=mailbox).start()
 
@@ -130,9 +151,9 @@ while True:
         stop_all()
         break
 
-    elif(button_upstream.pressed() == True):
+    elif(button_biodextris.pressed() == True):
         stop_all()
-        press("upstream")
+        press("biodextris")
 
     wait(250)
 

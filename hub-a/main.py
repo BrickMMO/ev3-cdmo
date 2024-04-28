@@ -15,13 +15,11 @@ import threading
 # This program requires LEGO EV3 MicroPython v2.0 or higher.
 # Click "Open user guide" on the EV3 extension tab for more information.
 
-'''
 server = BluetoothMailboxServer()
 mailbox_status = TextMailbox("", server)
-server.wait_for_connection()
-'''
+server.wait_for_connection(2)
 
-wait(1000)
+wait(2000)
 
 hub = "hub-a"
 room_current = "ready"
@@ -56,15 +54,12 @@ button_wheeler = TouchSensor(Port.S2)
 
 def press(room_new):
 
-    global room_current
+    print("starting " + room_new)
 
-    room_current = room_new
-    print("starting " + room_current)
-
-    if(room_current == "argonaut"):
+    if(room_new == "argonaut"):
         argonaut()
 
-    elif(room_current == "wheeler"):
+    elif(room_new == "wheeler"):
         wheeler()
 
 def stop_all():
@@ -80,17 +75,21 @@ def stop_all():
 
 def argonaut():
 
-    global button_delay
+    global button_delay, room_current
 
     wait(button_delay)
     if(button_argonaut.pressed() != True):
         return False
+    elif(room_current == "argonaut"):
+        return False
+
+    stop_all()
 
     print("argonaut")
     room_current = "argonaut"
-    # mailbox_status.send("argonaut")
+    mailbox_status.send("argonaut")
 
-    response = urequests.get("http://192.168.1.15:8888/queue.php?next=argonaut.mp4")
+    response = urequests.get("http://10.12.1.105:8888/queue.php?next=argonaut.mp4")
 
     counter = 0
 
@@ -101,7 +100,6 @@ def argonaut():
         counter += 1
         if check_buttons():
             counter = 10000
-        
 
     print("end of argonaut")
 
@@ -110,17 +108,21 @@ def argonaut():
 
 def wheeler():
 
-    global button_delay
+    global button_delay, room_current
 
     wait(button_delay)
     if(button_wheeler.pressed() != True):
         return False
+    elif(room_current == "wheeler"):
+        return False
+
+    stop_all()
 
     print("wheeler")
     room_current = "wheeler"
-    # mailbox_status.send("wheeler")
+    mailbox_status.send("wheeler")
 
-    response = urequests.get("http://192.168.1.15:8888/queue.php?next=wheeler.mp4")
+    response = urequests.get("http://10.12.1.105:8888/queue.php?next=wheeler.mp4")
 
     counter = 0
 
@@ -146,12 +148,10 @@ def check_buttons():
         return True
 
     elif(button_argonaut.pressed() == True and room_current != "argonaut"):
-        stop_all()
         print("button pressed")
         return True
 
     elif(button_wheeler.pressed() == True and room_current != "wheeler"):
-        stop_all()
         print("button pressed")
         return True
 
@@ -162,13 +162,21 @@ def mailbox():
     global room_current
 
     while True:
+        
         mailbox_status.wait()
-        print(mailbox_status.read() + " - " + room_current)
+
+        print("------------------------------")
+        print(mailbox_status.read())
+        print(room_current)
+
         if(mailbox_status.read() != room_current):
-            mailbox_status.send(room_current)
+
             stop_all()
 
-# threading.Thread(target=mailbox).start()
+            room_current = mailbox_status.read()
+            mailbox_status.send(room_current)
+
+threading.Thread(target=mailbox).start()
 
 # Create a loop to react to distance
 while True:
