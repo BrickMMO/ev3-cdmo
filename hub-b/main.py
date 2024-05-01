@@ -11,27 +11,38 @@ from pybricks.messaging import BluetoothMailboxClient, TextMailbox
 import urequests
 import threading
 
+# Create your objects here.
+ev3 = EV3Brick()
+ev3.speaker.set_speech_options(None, 'f1')
+ev3.speaker.beep()
+
 # This program requires LEGO EV3 MicroPython v2.0 or higher.
 # Click "Open user guide" on the EV3 extension tab for more information.
+mailbox_on = True
 
+if mailbox_on == True:
+    ev3.speaker.say("Blue Tooth")
 
-client = BluetoothMailboxClient()
-mailbox_status = TextMailbox("", client)
-client.connect("delta")
+    client = BluetoothMailboxClient()
+    mailbox_status = TextMailbox("", client)
+    client.connect("delta")
 
-wait(1000)
+    ev3.speaker.say("Connected")
+else:
+    ev3.speaker.say("Blue Tooth Off")
 
 hub = "hub-b"
 room_current = "ready"
+ip = "192.168.1.9:8888"
 
+animation = 20
 button_delay = 150
 
-
-# Create your objects here.
-ev3 = EV3Brick()
-ev3.speaker.beep()
-
 # Initialize EV3 touch sensor and motors
+# JOINN Rocker
+# Scorpius Sampler
+# Scorpius Screen
+# JOINN Bioreactor
 motorA = Motor(Port.A)
 motorB = Motor(Port.B)
 motorC = Motor(Port.C)
@@ -39,19 +50,13 @@ motorD = Motor(Port.D)
 
 '''
 # Testing interactive components
-motorB.dc(35)
-motorC.dc(30)
+motorC.dc(-40)
 
-wait(6000)
-
-motorA.dc(30)
-motorD.dc(50)
-motorB.dc(0)
-motorC.dc(0)
-
-wait(6000)
+wait(30000)
 
 motorA.dc(0)
+motorB.dc(0)
+motorC.dc(0)
 motorD.dc(0)
 
 exit
@@ -74,7 +79,8 @@ def press(room_new):
 
 def stop_all():
 
-    global room_current
+    global room_current, mailbox_on, mailbox_status
+
     room_current = "ready"
 
     motorA.dc(0)
@@ -82,13 +88,19 @@ def stop_all():
     motorC.dc(0)
     motorD.dc(0)
     
-    # mailbox_status.send("ready")
-
+    '''
+    if mailbox_on == True:
+        try:
+            mailbox_status.send("ready")
+        except:
+            print("Error with stop all mailbox")
+    '''
+    
     print("end of stop_all")    
 
 def joinn():
 
-    global button_delay, room_current
+    global button_delay, room_current, mailbox_on, mailbox_status
 
     wait(button_delay)
     if(button_joinn.pressed() != True):
@@ -100,20 +112,25 @@ def joinn():
 
     print("joinn")
     room_current = "joinn"
-    mailbox_status.send("joinn")
 
-    response = urequests.get("http://10.12.1.105:8888/queue.php?next=joinn.mp4")
+    if mailbox_on == True:
+        try:
+            mailbox_status.send("joinn")
+        except:
+            print("Error with joinn mailbox")
+    
+    response = urequests.get("http://" + ip + "/queue.php?next=joinn.mp4")
 
     counter = 0
 
     motorA.dc(30)
     motorD.dc(50)
 
-    while counter < 100:
+    while counter < 10 * animation:
         wait(100)
         counter += 1
         if check_buttons():
-            counter = 10000
+            counter = 1000 * animation
 
     print("end of joinn")
 
@@ -121,7 +138,7 @@ def joinn():
 
 def scorpius():
 
-    global button_delay, room_current
+    global button_delay, room_current, mailbox_on, mailbox_status
 
     wait(button_delay)
     if(button_scorpius.pressed() != True):
@@ -133,20 +150,25 @@ def scorpius():
 
     print("scorpius")
     room_current = "scorpius"
-    mailbox_status.send("scorpius")
 
-    response = urequests.get("http://10.12.1.105:8888/queue.php?next=scorpius.mp4")
+    if mailbox_on == True:
+        try:
+            mailbox_status.send("scorpius")
+        except:
+            print("Error with scorpius mailbox")
+
+    response = urequests.get("http://" + ip + "/queue.php?next=scorpius.mp4")
 
     counter = 0
 
     motorB.dc(35)
-    motorC.dc(80)
+    motorC.dc(-40)    
 
-    while counter < 100:
+    while counter < 10 * animation:
         wait(100)
         counter += 1
         if check_buttons():
-            counter = 10000
+            counter = 1000 * animation
 
     print("end of scorpius")
 
@@ -176,12 +198,12 @@ def check_buttons():
 
 def mailbox():
 
-    global room_current
-
     while True:
 
-        mailbox_status.wait()
+        global room_current, mailbox_status
 
+        mailbox_status.wait()
+        
         print("------------------------------")
         print(mailbox_status.read())
         print(room_current)
@@ -190,9 +212,13 @@ def mailbox():
 
             stop_all()
 
-            room_current = mailbox_status.read()
+            try:
+                room_current = mailbox_status.read()
+            except:
+                print("Error with thread mailbox")
 
-threading.Thread(target=mailbox).start()
+if mailbox_on == True:
+    threading.Thread(target=mailbox).start()
 
 # Create a loop to react to distance
 while True:
