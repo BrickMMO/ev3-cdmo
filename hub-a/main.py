@@ -19,7 +19,8 @@ ev3.speaker.beep()
 
 # This program requires LEGO EV3 MicroPython v2.0 or higher.
 # Click "Open user guide" on the EV3 extension tab for more information.
-mailbox_on = True
+mailbox_on = False
+video_on = True
 
 if mailbox_on == True:
     ev3.speaker.say("Blue Tooth")
@@ -37,7 +38,14 @@ else:
 
 hub = "hub-a"
 room_current = "ready"
-ip = "192.168.1.9:8888"
+# ip = "10.12.1.105:8888"
+ip = "10.12.1.111:8888"
+
+print("http://" + ip + "/queue.php?next=argonaut.mp4")
+response = urequests.get("http://" + ip + "/queue.php?next=argonaut.mp4")
+print(response)
+
+exit
 
 animation = 20
 button_delay = 150
@@ -116,7 +124,9 @@ def argonaut():
         except:
             print("Error with argonaut mailbox")
 
-    response = urequests.get("http://" + ip + "/queue.php?next=argonaut.mp4")
+    if video_on == True:
+        response = urequests.get("http://" + ip + "/queue.php?next=argonaut.mp4")
+        print(response)
 
     counter = 0
 
@@ -154,7 +164,8 @@ def wheeler():
         except:
             print("Error with wheeler mailbox")
 
-    response = urequests.get("http://" + ip + "/queue.php?next=wheeler.mp4")
+    if video_on == True:
+        response = urequests.get("http://" + ip + "/queue.php?next=wheeler.mp4")
 
     counter = 0
 

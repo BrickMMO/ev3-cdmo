@@ -34,7 +34,8 @@ else:
 
 hub = "hub-c"
 room_current = "ready"
-ip = "192.168.1.9:8888"
+# ip = "10.12.1.105:8888"
+ip = "10.12.1.111:8888"
 
 animation = 20
 button_delay = 150
