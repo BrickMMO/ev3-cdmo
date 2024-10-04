@@ -10,6 +10,8 @@ from pybricks.messaging import BluetoothMailboxClient, TextMailbox
 
 import urequests
 import threading
+import random
+import math
 
 # Create your objects here.
 ev3 = EV3Brick()
@@ -19,6 +21,8 @@ ev3.speaker.beep()
 # This program requires LEGO EV3 MicroPython v2.0 or higher.
 # Click "Open user guide" on the EV3 extension tab for more information.
 mailbox_on = True
+video_on = True
+lull_on = True
 
 if mailbox_on == True:
     ev3.speaker.say("Blue Tooth")
@@ -33,8 +37,8 @@ else:
 
 hub = "hub-b"
 room_current = "ready"
-# ip = "10.12.1.105:8888"
-ip = "10.12.1.111:8888"
+ip = "10.12.1.105:8888"
+# ip = "10.12.1.129"
 
 animation = 20
 button_delay = 150
@@ -44,6 +48,8 @@ button_delay = 150
 # Scorpius Sampler
 # Scorpius Screen
 # JOINN Bioreactor
+# Hub ls CENTER hub
+# Usualy Hub BRAVO
 motorA = Motor(Port.A)
 motorB = Motor(Port.B)
 motorC = Motor(Port.C)
@@ -65,6 +71,10 @@ exit
 
 button_joinn = TouchSensor(Port.S1)
 button_scorpius = TouchSensor(Port.S2)
+
+def button_beep():
+
+    ev3.speaker.beep()
 
 def press(room_new):
 
@@ -96,7 +106,7 @@ def stop_all():
         except:
             print("Error with stop all mailbox")
     '''
-    
+
     print("end of stop_all")    
 
 def joinn():
@@ -111,6 +121,8 @@ def joinn():
 
     stop_all()
 
+    button_beep()
+
     print("joinn")
     room_current = "joinn"
 
@@ -120,11 +132,12 @@ def joinn():
         except:
             print("Error with joinn mailbox")
     
-    response = urequests.get("http://" + ip + "/queue.php?next=joinn.mp4")
+    if video_on == True:
+        response = urequests.get("http://" + ip + "/queue.php?next=upstream.mp4")
 
     counter = 0
 
-    motorA.dc(30)
+    motorA.dc(40)
     motorD.dc(50)
 
     while counter < 10 * animation:
@@ -149,6 +162,8 @@ def scorpius():
 
     stop_all()
 
+    button_beep()
+
     print("scorpius")
     room_current = "scorpius"
 
@@ -158,18 +173,27 @@ def scorpius():
         except:
             print("Error with scorpius mailbox")
 
-    response = urequests.get("http://" + ip + "/queue.php?next=scorpius.mp4")
+    if video_on == True:
+        response = urequests.get("http://" + ip + "/queue.php?next=quality-control.mp4")
 
     counter = 0
 
-    motorB.dc(35)
-    motorC.dc(-40)    
+    motorB.dc(0)
+    motorC.dc(0)    
 
     while counter < 10 * animation:
         wait(100)
         counter += 1
         if check_buttons():
             counter = 1000 * animation
+
+        # print(math.floor(counter / 50) % 2)
+        if math.floor(counter / 25) % 2 == 1:
+            motorB.dc(0)
+            motorC.dc(-40)
+        else:
+            motorB.dc(35)
+            motorC.dc(0)
 
     print("end of scorpius")
 
@@ -220,6 +244,57 @@ def mailbox():
 
 if mailbox_on == True:
     threading.Thread(target=mailbox).start()
+
+def lull():
+
+    global room_current
+
+    lull_random_from = 30
+    lull_random_to = 40
+
+    lull_counter = 0
+    lull_random = random.randint(lull_random_from,lull_random_to)
+    lull_motor = random.randint(1,4)
+
+    while True:
+
+        print(room_current)
+        print(lull_counter)
+        print(lull_random)
+        print(lull_motor)
+
+        lull_counter += 1
+
+        if room_current == "join" or room_current == "scorpius":
+
+            lull_counter = 0
+
+        elif lull_counter > lull_random + 5: 
+
+            lull_counter = 0
+            lull_random = random.randint(lull_random_from,lull_random_to)
+            lull_motor = random.randint(1,4)
+
+            motorA.dc(0)
+            motorB.dc(0)
+            motorC.dc(0)
+            motorD.dc(0)
+
+        elif lull_counter > lull_random: 
+
+            if lull_motor == 1:
+                motorA.dc(40)
+            elif lull_motor == 2:
+                motorB.dc(35)
+            elif lull_motor == 3:
+                motorC.dc(-40)    
+            elif lull_motor == 4:
+                motorD.dc(50)
+
+        wait(1000)
+
+if lull_on == True:
+    threading.Thread(target=lull).start()
 
 # Create a loop to react to distance
 while True:

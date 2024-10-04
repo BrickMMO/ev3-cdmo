@@ -11,6 +11,7 @@ from pybricks.messaging import BluetoothMailboxClient, TextMailbox
 
 import urequests
 import threading
+import random
 
 # Create your objects here.
 ev3 = EV3Brick()
@@ -20,6 +21,8 @@ ev3.speaker.beep()
 # This program requires LEGO EV3 MicroPython v2.0 or higher.
 # Click "Open user guide" on the EV3 extension tab for more information.
 mailbox_on = True
+video_on = True
+lull_on = True
 
 if mailbox_on == True:
     ev3.speaker.say("Blue Tooth")
@@ -34,20 +37,25 @@ else:
 
 hub = "hub-c"
 room_current = "ready"
-# ip = "10.12.1.105:8888"
-ip = "10.12.1.111:8888"
+ip = "10.12.1.105:8888"
+# ip = "10.12.1.129"
 
 animation = 20
 button_delay = 150
+elevator_position = "top"
 
 # Initialize EV3 touch sensor and motors
 # Biodextris Screen
 # Biodextris Shaker
 # Global Lights
+# Hub ls LEFT most hub
+# Usualy Hub FOXTROT
 # ---
 motorA = Motor(Port.A)
 motorB = Motor(Port.B)
 motorC = DCMotor(Port.C)
+# motorD = Motor(Port.D)
+
 
 # Truen lights on
 motorC.dc(100)
@@ -67,6 +75,10 @@ exit
 
 button_biodextris = TouchSensor(Port.S1)
 
+def button_beep():
+
+    ev3.speaker.beep()
+
 def press(room_new):
 
     global room_current
@@ -84,14 +96,6 @@ def stop_all():
     motorA.dc(0)
     motorB.dc(0)
     
-    '''
-    if mailbox_on == True:
-        try:
-            mailbox_status.send("ready")
-        except:
-            print("Error with stop all mailbox")
-    '''
-    
     print("end of stop_all")    
 
 def biodextris():
@@ -106,6 +110,8 @@ def biodextris():
 
     stop_all()
 
+    button_beep()
+
     print("biodextris")
     room_current = "biodextris"
 
@@ -115,7 +121,8 @@ def biodextris():
         except:
             print("Error with biodextris mailbox")
 
-    response = urequests.get("http://" + ip + "/queue.php?next=biodextris.mp4")
+    if video_on == True:
+        response = urequests.get("http://" + ip + "/queue.php?next=process-development.mp4")
 
     counter = 0
 
@@ -173,6 +180,69 @@ def mailbox():
 
 if mailbox_on == True:
     threading.Thread(target=mailbox).start()
+
+def lull():
+
+    global room_current, elevator_position
+
+    lull_random_from = 10
+    lull_random_to = 15
+
+    lull_counter = 0
+    lull_random = random.randint(lull_random_from,lull_random_to)
+    lull_motor = random.randint(1,2)
+    # lull_motor = 3
+
+    while True:
+
+        print(room_current)
+        print(lull_counter)
+        print(lull_random)
+        print(lull_motor)
+
+        lull_counter += 1
+
+        if room_current == "biodextris":
+
+            lull_counter = 0
+
+        elif lull_counter > lull_random + 5:
+
+            lull_counter = 0
+            lull_random = random.randint(lull_random_from,lull_random_to)
+            lull_motor = random.randint(1,2)
+            # lull_motor = 4
+
+            motorA.dc(0)
+            motorB.dc(0)
+            # motorD.dc(0)
+
+        elif lull_counter > lull_random: 
+
+            if lull_motor == 1:
+                motorA.dc(40)
+            elif lull_motor == 2:
+                motorB.dc(30)
+            elif lull_motor == 3:
+                
+                # if elevator_position == "top":
+
+                # elevator_position = "bottom"
+                # motorD.run_until_stalled(-80, Stop.COAST, 50)
+                print("bottom")
+
+            elif lull_motor == 4:
+
+                # elif elevator_position == "bottom":
+
+                # elevator_position = "top"
+                # motorD.run_until_stalled(80, Stop.COAST, 50)
+                print("bottom")
+            
+        wait(1000)
+
+if lull_on == True:
+    threading.Thread(target=lull).start()
 
 # Create a loop to react to distance
 while True:

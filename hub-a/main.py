@@ -11,6 +11,7 @@ from pybricks.messaging import BluetoothMailboxServer, TextMailbox
 
 import urequests
 import threading
+import random
 
 # Create your objects here.
 ev3 = EV3Brick()
@@ -19,8 +20,9 @@ ev3.speaker.beep()
 
 # This program requires LEGO EV3 MicroPython v2.0 or higher.
 # Click "Open user guide" on the EV3 extension tab for more information.
-mailbox_on = False
+mailbox_on = True
 video_on = True
+lull_on = True
 
 if mailbox_on == True:
     ev3.speaker.say("Blue Tooth")
@@ -38,14 +40,12 @@ else:
 
 hub = "hub-a"
 room_current = "ready"
-# ip = "10.12.1.105:8888"
-ip = "10.12.1.111:8888"
+ip = "10.12.1.105:8888"
+# ip = "10.12.1.129"
 
-print("http://" + ip + "/queue.php?next=argonaut.mp4")
-response = urequests.get("http://" + ip + "/queue.php?next=argonaut.mp4")
-print(response)
-
-exit
+# print("http://" + ip + "/queue.php?next=argonaut.mp4")
+# response = urequests.get("http://" + ip + "/queue.php?next=argonaut.mp4")
+# print(response)
 
 animation = 20
 button_delay = 150
@@ -55,13 +55,15 @@ button_delay = 150
 # Wheeler Bioreactor
 # Wheeler Screen
 # Global Lights
+# Hub ls RIGHT most hub
+# Usualy Hub DELTA
 motorA = Motor(Port.A)
 motorB = Motor(Port.B)
 motorC = Motor(Port.C)
 motorD = DCMotor(Port.D)
 
 # Truen lights on
-motorD.dc(100)
+# motorD.dc(100)
 
 '''
 # Testing interactive components
@@ -80,6 +82,10 @@ exit
 
 button_argonaut = TouchSensor(Port.S1)
 button_wheeler = TouchSensor(Port.S2)
+
+def button_beep():
+
+    ev3.speaker.beep()
 
 def press(room_new):
 
@@ -115,6 +121,8 @@ def argonaut():
 
     stop_all()
 
+    button_beep()
+
     print("argonaut")
     room_current = "argonaut"
 
@@ -125,7 +133,8 @@ def argonaut():
             print("Error with argonaut mailbox")
 
     if video_on == True:
-        response = urequests.get("http://" + ip + "/queue.php?next=argonaut.mp4")
+        print("TEST")
+        response = urequests.get("http://" + ip + "/queue.php?next=fill-finish.mp4")
         print(response)
 
     counter = 0
@@ -155,6 +164,8 @@ def wheeler():
 
     stop_all()
 
+    button_beep()
+
     print("wheeler")
     room_current = "wheeler"
 
@@ -165,12 +176,14 @@ def wheeler():
             print("Error with wheeler mailbox")
 
     if video_on == True:
-        response = urequests.get("http://" + ip + "/queue.php?next=wheeler.mp4")
+        print("TEST")
+        response = urequests.get("http://" + ip + "/queue.php?next=downstream.mp4")
+        print(response)
 
     counter = 0
 
     motorB.dc(60)
-    motorC.dc(60)
+    motorC.dc(70)
 
     while counter < 10 * animation:
         wait(100)
@@ -224,6 +237,54 @@ def mailbox():
 
 if mailbox_on == True:
     threading.Thread(target=mailbox).start()
+
+def lull():
+
+    global room_current
+
+    lull_random_from = 30
+    lull_random_to = 40
+
+    lull_counter = 0
+    lull_random = random.randint(lull_random_from,lull_random_to)
+    lull_motor = random.randint(1,3)
+
+    while True:
+
+        print(room_current)
+        print(lull_counter)
+        print(lull_random)
+        print(lull_motor)
+
+        lull_counter += 1
+
+        if room_current == "wheeler" or room_current == "argonaut":
+
+            lull_counter = 0
+
+        elif lull_counter > lull_random + 5: 
+
+            lull_counter = 0
+            lull_random = random.randint(lull_random_from,lull_random_to)
+            lull_motor = random.randint(1,3)
+
+            motorA.dc(0)
+            motorB.dc(0)
+            motorC.dc(0)
+
+        elif lull_counter > lull_random: 
+
+            if lull_motor == 1:
+                motorA.dc(-60)
+            elif lull_motor == 2:
+                motorB.dc(60)
+            elif lull_motor == 3:
+                motorC.dc(70)
+            
+        wait(1000)
+
+if lull_on == True:
+    threading.Thread(target=lull).start()
 
 # Create a loop to react to distance
 while True:
